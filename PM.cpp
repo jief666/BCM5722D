@@ -80,8 +80,7 @@ IOReturn BCM5722D::setPowerState(unsigned long powerStateOrdinal,
     return IOPMAckImplied;
   }
 
-  DebugLog("Changing power state from %lu to %lu",
-           currentPowerState, powerStateOrdinal);
+  DebugLog("Changing power state from %lu to %lu", currentPowerState, powerStateOrdinal);
   
   switch (powerStateOrdinal) {
 

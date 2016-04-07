@@ -938,11 +938,13 @@ void BCM5722D::enableInterrupts(bool active)
 
 void BCM5722D::interruptOccurred(IOInterruptEventSource *source, int count)
 {
+//DebugLog("enter statusBlock->statusWord=%x", statusBlock->statusWord);
     UInt32 statusTag;
 
     statusTag = statusBlock->statusTag << 24;
 
     if (statusBlock->statusWord & STATUS_WORD_LNKCHGD) {
+        DebugLog("calling serviceLinkInterrupt statusBlock->statusWord=%x", statusBlock->statusWord);
         serviceLinkInterrupt();
     }
 
