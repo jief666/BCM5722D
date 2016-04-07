@@ -30,6 +30,17 @@ Method of installation
 * Manually copy the kext to /S/L/E and repair permissions, or
 * Use [KextWizard](http://www.insanelymac.com/forum/index.php?showtopic=253395).
 
+or
+
+Install in kext dir of Clover
+
+Downloads
+---------
+
+Downloads are available on Bitbucket:
+
+https://bitbucket.org/Jief666/bcm5722d/downloads
+
 Issues
 ------
 
