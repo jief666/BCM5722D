@@ -567,12 +567,14 @@ void BCM5722D::configureLinkAdvertisement(LinkSpeed linkSpeed,
   }
 
   DebugLog("advertiseFe: %X", advertiseFe);
-  DebugLog("advertiseGe: %X", advertiseGe);
-
   writeMII(PHY_AUTONEGADVERT, advertiseFe);
 
   if (!(phyFlags & PHYFLAG_FAST_ETHERNET)) {
+    DebugLog("advertiseGe: %X", advertiseGe);
     writeMII(PHY_1000BASETCTL, advertiseGe);
+
+    DebugLog("calling serviceLinkInterrupt");
+    serviceLinkInterrupt();
   }
 } // configureLinkAdvertisement()
 
