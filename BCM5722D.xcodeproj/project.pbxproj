@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		32D94FC80562CBF700B6AF17 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
+		9A0875C21CB67D32001541C0 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 9A0875C11CB67D32001541C0 /* README.md */; };
 		9C9B60221308CC8E00B20F72 /* HW.h in Headers */ = {isa = PBXBuildFile; fileRef = 9C9B60211308CC8E00B20F72 /* HW.h */; };
 		9C9B60241308CC9E00B20F72 /* PHY.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9C9B60231308CC9E00B20F72 /* PHY.cpp */; };
 		9C9B60261308CCA800B20F72 /* PHY.h in Headers */ = {isa = PBXBuildFile; fileRef = 9C9B60251308CCA800B20F72 /* PHY.h */; };
@@ -24,6 +25,7 @@
 		32D94FCF0562CBF700B6AF17 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		32D94FD00562CBF700B6AF17 /* BCM5722D.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BCM5722D.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		8DA8362C06AD9B9200E5AC22 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = /System/Library/Frameworks/Kernel.framework; sourceTree = "<absolute>"; };
+		9A0875C11CB67D32001541C0 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C9B60211308CC8E00B20F72 /* HW.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HW.h; sourceTree = "<group>"; };
 		9C9B60231308CC9E00B20F72 /* PHY.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PHY.cpp; sourceTree = "<group>"; };
 		9C9B60251308CCA800B20F72 /* PHY.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PHY.h; sourceTree = "<group>"; };
@@ -60,6 +62,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				9A0875C11CB67D32001541C0 /* README.md */,
 				32D94FCF0562CBF700B6AF17 /* Info.plist */,
 				089C167DFE841241C02AAC07 /* InfoPlist.strings */,
 			);
@@ -183,6 +186,7 @@
 			files = (
 				9C9B60241308CC9E00B20F72 /* PHY.cpp in Sources */,
 				9C9B60291308CCB600B20F72 /* PM.cpp in Sources */,
+				9A0875C21CB67D32001541C0 /* README.md in Sources */,
 				9C9B602F1308CCDB00B20F72 /* BCM5722D.cpp in Sources */,
 				9C9B60321308CCDB00B20F72 /* Private.cpp in Sources */,
 			);
