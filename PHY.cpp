@@ -375,6 +375,12 @@ IOReturn BCM5722D::setMedium(const IONetworkMedium *medium)
       DebugLog("Change medium: kIOMediumEthernet1000BaseT");
       changeSpeed = kLinkSpeed1000;
       break;
+          
+    default:
+      DebugLog("ATTENTION: Change medium: %x unhandled", IOMediumGetSubType(type) + kIOMediumEthernet);
+      changeSpeed = kLinkSpeedNegotiate;
+      changeDuplex = kLinkDuplexNegotiate;
+      break;
 
   }
 
@@ -510,7 +516,6 @@ void BCM5722D::configureLinkAdvertisement(LinkSpeed linkSpeed,
                        PHY_1000BASETCTL_ADVERTFD
                        );
       }
-      default:
       break;
 
     case kLinkSpeed1000:
@@ -554,6 +559,10 @@ void BCM5722D::configureLinkAdvertisement(LinkSpeed linkSpeed,
       }
 
       break;
+          
+      default:
+          DebugLog("ATTENTION: unknown linkSpeed: %x", linkSpeed);
+          break;
 
   }
 
@@ -621,7 +630,10 @@ bool BCM5722D::forceLinkSpeedDuplex(LinkSpeed changeSpeed,
       configureLinkAdvertisement(changeSpeed, changeDuplex);
 
       autoNegotiate = true;
-        default:
+      break;
+          
+    default:
+      DebugLog("ATTENTION: unknown linkSpeed: %x", changeSpeed);
       break;
 
   }

@@ -239,9 +239,13 @@ bool BCM5722D::initializeAdapter()
       case REVLEVEL_A1:
       case REVLEVEL_A2:
         writeCSR(TXDI_TXISOPKT, (readCSR(TXDI_TXISOPKT) & ~0x3) | 0x2);
+        break;
 
       default:
+      {
+        DebugLog("ATTENTION: unknown GET_REVID(asicRevision): %x", GET_REVID(asicRevision));
         break;
+      }
 
     }
 
