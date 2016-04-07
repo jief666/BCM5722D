@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>${MODULE_VERSION}</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
@@ -39,11 +39,18 @@
 				<string>pci14e4,1672</string>
 				<string>pci14e4,167b</string>
 				<string>pci14e4,1673</string>
-				<string>pci14e4,1691</string>
 				<string>pci14e4,169b</string>
 				<string>pci14e4,1693</string>
 				<string>pci14e4,1712</string>
 				<string>pci14e4,1713</string>
+				<string>pci14e4,1691</string>
+				<string>pci14e4,1698</string>
+				<string>pci14e4,16b5</string>
+				<string>pci14e4,16b1</string>
+				<string>pci14e4,1692</string>
+				<string>pci14e4,1600</string>
+				<string>pci14e4,1681</string>
+				<string>pci14e4,1680</string>
 			</array>
 			<key>IOProviderClass</key>
 			<string>IOPCIDevice</string>

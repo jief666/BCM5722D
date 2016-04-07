@@ -238,7 +238,7 @@ bool BCM5722D::initializeAdapter()
       case REVLEVEL_A0:
       case REVLEVEL_A1:
       case REVLEVEL_A2:
-        writeCSR(TXDI_TXISOPKT, readCSR(TXDI_TXISOPKT) & ~0x3 | 0x2);
+        writeCSR(TXDI_TXISOPKT, (readCSR(TXDI_TXISOPKT) & ~0x3) | 0x2);
 
       default:
         break;
@@ -552,8 +552,8 @@ void BCM5722D::stopAdapter()
 
     if (j == 0) {
       DebugLog("0x%08X enable bit does not clear (0x%08X)",
-               steps[i].reg,
-               readCSR(steps[i].reg));
+               (unsigned int)steps[i].reg,
+               (unsigned int)readCSR(steps[i].reg));
     }
   }
 
@@ -823,48 +823,46 @@ void BCM5722D::freeRxRing()
 bool BCM5722D::configureRxDescriptor(UInt16 index,
                                      BOption options)
 {
-  IOPhysicalSegment    segment;
-  BRxBufferDescriptor *bd;
-  UInt32               count;
-  bool                 updated = false;
+    IOPhysicalSegment    segment;
+    BRxBufferDescriptor *bd;
+    UInt32               count;
+    bool                 updated = false;
 
-  bd = &rxBD[index];
+    bd = &rxBD[index];
 
-  switch (options) {
+    switch (options) {
+        case kBDOptionReuse:
+            bd->flags = RXBDFLAG_PACKET_END;
+            bd->length = rxSegmentLength[index];
 
-    case kBDOptionReuse:
+            updated = true;
+            break;
 
-      bd->flags = RXBDFLAG_PACKET_END;
-      bd->length = rxSegmentLength[index];
+        default:
+            count = rxCursor->getPhysicalSegmentsWithCoalesce(rxPacketArray[index],
+                                                            &segment,
+                                                            kRxMaxSegmentCount);
 
-      updated = true;
-      break;
+            if (count) {
+                bd->addressHigh = HOSTADDRESS_HI(segment.location);
+                bd->addressLow = HOSTADDRESS_LO(segment.location);
+                bd->flags = RXBDFLAG_PACKET_END;
+                bd->length = segment.length;
+                bd->index = index;
 
-    default:
+                rxSegmentLength[index] = segment.length;
 
-      count = rxCursor->getPhysicalSegmentsWithCoalesce(rxPacketArray[index],
-                                                        &segment,
-                                                        kRxMaxSegmentCount);
-
-      if (count) {
-
-        bd->addressHigh = HOSTADDRESS_HI(segment.location);
-        bd->addressLow = HOSTADDRESS_LO(segment.location);
-        bd->flags = RXBDFLAG_PACKET_END;
-        bd->length = segment.length;
-        bd->index = index;
-
-        rxSegmentLength[index] = segment.length;
-
-        updated = true;
-
-      }
-
-      break;
-
-  }
-
-  return updated;
+                updated = true;
+            } else {
+                /* In case getPhysicalSegmentsWithCoalesce() failed we must
+                 * prepare the descriptor to be reused.
+                 */
+                bd->flags = RXBDFLAG_PACKET_END;
+                bd->length = rxSegmentLength[index];
+            }
+            break;
+    }
+    return updated;
 } // configureRxDescriptor()
 
 
@@ -940,31 +938,29 @@ void BCM5722D::enableInterrupts(bool active)
 
 void BCM5722D::interruptOccurred(IOInterruptEventSource *source, int count)
 {
-  UInt32 statusTag;
+    UInt32 statusTag;
 
-  statusTag = statusBlock->statusTag << 24;
+    statusTag = statusBlock->statusTag << 24;
 
-  if (statusBlock->statusWord & STATUS_WORD_LNKCHGD) {
-    serviceLinkInterrupt();
-  }
+    if (statusBlock->statusWord & STATUS_WORD_LNKCHGD) {
+        serviceLinkInterrupt();
+    }
 
-  UInt16 producerIdx = statusBlock->rxReturn1ProducerIdx;
+    UInt16 producerIdx = statusBlock->rxReturn1ProducerIdx;
 
-  if (producerIdx != rxReturnConsumerIdx) {
-    serviceRxInterrupt(producerIdx);
-    BUMP_RXSTAT(interrupts);
-  }
+    if (producerIdx != rxReturnConsumerIdx) {
+        serviceRxInterrupt(producerIdx);
+        BUMP_RXSTAT(interrupts);
+    }
 
-  UInt16 consumerIdx = statusBlock->txConsumerIdx;
+    UInt16 consumerIdx = statusBlock->txConsumerIdx;
 
-  if (consumerIdx != txLocalConsumerIdx) {
-    serviceTxInterrupt(consumerIdx);
-    BUMP_TXSTAT(interrupts);
-    transmitQueue->service(IOBasicOutputQueue::kServiceAsync);
-  }
+    if (consumerIdx != txLocalConsumerIdx) {
+        serviceTxInterrupt(consumerIdx);
+        BUMP_TXSTAT(interrupts);
+    }
 
-  writeMailbox(HPMBX_IRQ0_LO, statusTag);
-
+    writeMailbox(HPMBX_IRQ0_LO, statusTag);
 } // interruptOccurred()
 
 
@@ -975,22 +971,21 @@ void BCM5722D::timeoutOccurred(IOTimerEventSource *source)
   timerSource->setTimeoutMS(kWatchDogTimeout);
 } // timeoutOccurred()
 
-
 void BCM5722D::serviceTxInterrupt(UInt16 consumerIdx)
 {
-  while (txLocalConsumerIdx != consumerIdx) {
-
-    if (txPacketArray[txLocalConsumerIdx] != 0) {
-
-      freePacket(txPacketArray[txLocalConsumerIdx]);
-      txPacketArray[txLocalConsumerIdx] = 0;
-
+    while (txLocalConsumerIdx != consumerIdx) {
+        if (txPacketArray[txLocalConsumerIdx] != 0) {
+            freePacket(txPacketArray[txLocalConsumerIdx]);
+            txPacketArray[txLocalConsumerIdx] = 0;
+        }
+        OSIncrementAtomic16(&txFreeSlot);
+        INCREMENT(txLocalConsumerIdx, kTxBDCount);
     }
-
-    txFreeSlot++;
-    INCREMENT(txLocalConsumerIdx, kTxBDCount);
-
-  }
+    if (queueStalled) {
+        DebugLog("Restart stalled queue");
+        queueStalled = false;
+        transmitQueue->service(IOBasicOutputQueue::kServiceAsync);
+    }
 } // serviceTxInterrupt()
 
 
@@ -999,93 +994,86 @@ void BCM5722D::serviceTxInterrupt(UInt16 consumerIdx)
  */
 void BCM5722D::serviceRxInterrupt(UInt16 producerIdx)
 {
-  BRxBufferDescriptor *bd;
-  mbuf_t               inputPacket;
-  bool                 replaced;
-  UInt16               packetLength;
-  UInt32               checksumValidMask = 0;
+    BRxBufferDescriptor *bd;
+    mbuf_t               inputPacket;
+    bool                 replaced;
+    UInt16               packetLength;
+    UInt32               checksumValidMask;
 
-  while (rxReturnConsumerIdx != producerIdx) {
+    while (rxReturnConsumerIdx != producerIdx) {
+        bd = &rxReturnBD[rxReturnConsumerIdx];
 
-    bd = &rxReturnBD[rxReturnConsumerIdx];
+        if (bd->flags & RXBDFLAG_FRAME_HAS_ERROR) {
+            BUMP_NETSTAT(inputErrors);
 
-    if (bd->flags & RXBDFLAG_FRAME_HAS_ERROR) {
+            if (bd->errorFlags & RXBDERROR_COLL_DETECT)    BUMP_RXSTAT(collisionErrors);
+            if (bd->errorFlags & RXBDERROR_PHY_DECODE_ERR) BUMP_RXSTAT(phyErrors);
+            if (bd->errorFlags & RXBDERROR_TRUNC_NO_RES)   BUMP_RXSTAT(resourceErrors);
+            if (bd->errorFlags & RXBDERROR_GIANT_PKT_RCVD) BUMP_RXSTAT(overruns);
+            if (bd->errorFlags & RXBDERROR_MAC_ABORT)      BUMP_RXSTAT(resets);
 
-      BUMP_NETSTAT(inputErrors);
+            configureRxDescriptor(bd->index, kBDOptionReuse);
 
-      if (bd->errorFlags & RXBDERROR_COLL_DETECT)    BUMP_RXSTAT(collisionErrors);
-      if (bd->errorFlags & RXBDERROR_PHY_DECODE_ERR) BUMP_RXSTAT(phyErrors);
-      if (bd->errorFlags & RXBDERROR_TRUNC_NO_RES)   BUMP_RXSTAT(resourceErrors);
-      if (bd->errorFlags & RXBDERROR_GIANT_PKT_RCVD) BUMP_RXSTAT(overruns);
-      if (bd->errorFlags & RXBDERROR_MAC_ABORT)      BUMP_RXSTAT(resets);
+            goto serviceRxInterruptNext;
+        }
 
-      configureRxDescriptor(bd->index, kBDOptionReuse);
+        packetLength = bd->length - kIOEthernetCRCSize;
 
-      goto serviceRxInterruptNext;
+        inputPacket = replaceOrCopyPacket(&rxPacketArray[bd->index], packetLength, &replaced);
 
-    }
+        if (inputPacket == 0) {
+            DebugLog("replaceOrCopyPacket returns 0");
+            configureRxDescriptor(bd->index, kBDOptionReuse);
+            BUMP_NETSTAT(inputErrors);
 
-    packetLength = bd->length - kIOEthernetCRCSize;
+            goto serviceRxInterruptNext;
+        }
 
-    inputPacket = replaceOrCopyPacket(&rxPacketArray[bd->index],
-                                      packetLength,
-                                      &replaced);
+        if (replaced) {
+            if (!configureRxDescriptor(bd->index)) {
+                DebugLog("configureRxDescriptor() failed");
+                freePacket(rxPacketArray[bd->index]);
+                rxPacketArray[bd->index] = inputPacket;
+                inputPacket = 0;
+                BUMP_NETSTAT(inputErrors);
 
-    if (inputPacket == 0) {
+                goto serviceRxInterruptNext;
+            }
+        } else {
+            configureRxDescriptor(bd->index, kBDOptionReuse);
+        }
+        checksumValidMask = 0;
+        
+        if (bd->flags & RXBDFLAG_IP_CHECKSUM) {
+            checksumValidMask |= kChecksumIP;
+        }
 
-      DebugLog("replaceOrCopyPacket returns 0");
-      configureRxDescriptor(bd->index, kBDOptionReuse);
-      BUMP_NETSTAT(inputErrors);
+        if (bd->flags & RXBDFLAG_TCP_UDP_CHECKSUM) {
+            checksumValidMask |= (bd->flags & RXBDFLAG_TCP_UDP_IS_TCP) ? kChecksumTCP : kChecksumUDP;
+        }
 
-      goto serviceRxInterruptNext;
+        if (checksumValidMask) {
+            setChecksumResult(inputPacket, kChecksumFamilyTCPIP, checksumValidMask, checksumValidMask);
+        }
 
-    }
+        if (bd->flags & RXBDFLAG_VLAN_TAG) {
+            setVlanTag(inputPacket, bd->vlanTag);
+        }
 
-    if (replaced && !configureRxDescriptor(bd->index)) {
+        netIface->inputPacket(inputPacket, packetLength, IONetworkInterface::kInputOptionQueuePacket);
 
-      freePacket(rxPacketArray[bd->index]);
-      rxPacketArray[bd->index] = inputPacket;
-      inputPacket = 0;
-      BUMP_NETSTAT(inputErrors);
-
-      goto serviceRxInterruptNext;
-
-    }
-
-    if (bd->flags & RXBDFLAG_IP_CHECKSUM) {
-      checksumValidMask |= kChecksumIP;
-    }
-
-    if (bd->flags & RXBDFLAG_TCP_UDP_CHECKSUM) {
-      checksumValidMask |= (kChecksumTCP | kChecksumUDP);
-    }
-
-    setChecksumResult(inputPacket,
-                      kChecksumFamilyTCPIP,
-                      (kChecksumIP | kChecksumTCP | kChecksumUDP),
-                      checksumValidMask);
-
-    if (bd->flags & RXBDFLAG_VLAN_TAG) {
-      setVlanTag(inputPacket, bd->vlanTag);
-    }
-
-    netIface->inputPacket(inputPacket,
-                          packetLength,
-                          IONetworkInterface::kInputOptionQueuePacket);
-
-    BUMP_NETSTAT(inputPackets);
+        BUMP_NETSTAT(inputPackets);
 
 serviceRxInterruptNext:
 
-    INCREMENT(rxReturnConsumerIdx, kRxBDCount);
-    INCREMENT(rxProducerIdx, kRxBDCount);
+        INCREMENT(rxReturnConsumerIdx, kRxBDCount);
+        INCREMENT(rxProducerIdx, kRxBDCount);
+    }
 
-  }
+    writeMailbox(HPMBX_RXR1IDX_LO, rxReturnConsumerIdx);
+    writeMailbox(HPMBX_RXPIDX_LO, rxProducerIdx);
 
-  writeMailbox(HPMBX_RXR1IDX_LO, rxReturnConsumerIdx);
-  writeMailbox(HPMBX_RXPIDX_LO, rxProducerIdx);
-
-  netIface->flushInputQueue();
+    netIface->flushInputQueue();
 } // serviceRxInterrupt()
 
 

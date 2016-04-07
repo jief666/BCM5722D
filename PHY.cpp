@@ -420,7 +420,8 @@ inline UInt16 BCM5722D::resolvePauseAdvertisement(FlowControl flowControl)
     case kFlowControlSymmetric:
 
       advertise = PHY_AUTONEGADVERT_PAUSECAP;
-
+          
+    default:
       break;
 
   }
@@ -470,6 +471,7 @@ setupFlowControlDone:
     case kFlowControlSymmetric:
       txMode |= EMAC_TXMODE_FLOWCTL;
       rxMode |= EMAC_RXMODE_FLOWCTL;
+    default:
       break;
   }
 
@@ -505,7 +507,7 @@ void BCM5722D::configureLinkAdvertisement(LinkSpeed linkSpeed,
                        PHY_1000BASETCTL_ADVERTFD
                        );
       }
-
+      default:
       break;
 
     case kLinkSpeed1000:
@@ -603,7 +605,7 @@ bool BCM5722D::forceLinkSpeedDuplex(LinkSpeed changeSpeed,
     case kLinkSpeed100:
       miiCtl = PHY_MIICTL_SPEED_100;
       media.speed = kLinkSpeed100;
-
+      
       break;
 
     case kLinkSpeed1000:
@@ -616,7 +618,7 @@ bool BCM5722D::forceLinkSpeedDuplex(LinkSpeed changeSpeed,
       configureLinkAdvertisement(changeSpeed, changeDuplex);
 
       autoNegotiate = true;
-
+        default:
       break;
 
   }

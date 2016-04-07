@@ -19,17 +19,45 @@
 #ifndef BCM5722D_BCM5722D_H
 #define BCM5722D_BCM5722D_H
 
-#include <IOKit/pci/IOPCIDevice.h>
-#include <IOKit/IOBufferMemoryDescriptor.h>
-#include <IOKit/IOInterruptEventSource.h>
-#include <IOKit/IOTimerEventSource.h>
-#include <IOKit/network/IONetworkInterface.h>
-#include <IOKit/network/IOEthernetInterface.h>
-#include <IOKit/network/IONetworkStats.h>
-#include <IOKit/network/IOEthernetStats.h>
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+    
+#include <libkern/libkern.h>
+#include <libkern/OSAtomic.h>
+#include <machine/limits.h>
+#include <net/ethernet.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/if_var.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <sys/appleapiopts.h>
+#include <sys/errno.h>
+#include <sys/kpi_mbuf.h>
+    
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#ifdef __cplusplus
+
 #include <IOKit/network/IOMbufMemoryCursor.h>
-#include <IOKit/network/IONetworkMedium.h>
+#include <IOKit/IOBufferMemoryDescriptor.h>
+#include <IOKit/IOCommandGate.h>
+#include <IOKit/IOFilterInterruptEventSource.h>
+#include <IOKit/IOLib.h>
+#include <IOKit/IOLocks.h>
+#include <IOKit/IOTimerEventSource.h>
+#include <IOKit/IOTypes.h>
+#include <IOKit/network/IOEthernetController.h>
+#include <IOKit/network/IOEthernetInterface.h>
 #include <IOKit/network/IOBasicOutputQueue.h>
+#include <IOKit/pci/IOPCIDevice.h>
+
+#endif // __cplusplus
 
 #include "Common.h"
 #include "PHY.h"
@@ -100,6 +128,7 @@ class BCM5722D : public IOEthernetController
   UInt16        asicRevision;
   UInt16        deviceID;
   UInt32        txQueueLength;
+    bool          queueStalled;
   bool          magicPacketSupported;
   bool          wakeOnLanEnabled;
   bool          adapterEnabled;
@@ -109,7 +138,7 @@ class BCM5722D : public IOEthernetController
 
   UInt16 txProducerIdx;
   UInt16 txLocalConsumerIdx;
-  UInt16 txFreeSlot;
+    SInt16 txFreeSlot;
 
   UInt16 rxProducerIdx;
   UInt16 rxReturnConsumerIdx;
@@ -140,6 +169,7 @@ class BCM5722D : public IOEthernetController
 
   virtual IOReturn        enable(IONetworkInterface *iface);
   virtual IOReturn        disable(IONetworkInterface *iface);
+    virtual void            systemWillShutdown(IOOptionBits specifier);
   virtual bool            createWorkLoop();
   virtual IOWorkLoop     *getWorkLoop(void) const;
   virtual IOOutputQueue  *createOutputQueue();
